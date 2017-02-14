@@ -16,10 +16,16 @@
  */
 package org.testfx.api;
 
+import java.nio.file.Paths;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
+import java.util.function.Predicate;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.stage.Screen;
 
-import com.google.common.base.Predicate;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.testfx.api.annotation.Unstable;
@@ -28,13 +34,15 @@ import org.testfx.service.finder.NodeFinder;
 import org.testfx.service.query.NodeQuery;
 
 @Unstable(reason = "method signatures need fine-tuning")
-public class FxAssert {
+public final class FxAssert {
 
     //---------------------------------------------------------------------------------------------
     // CONSTANTS.
     //---------------------------------------------------------------------------------------------
 
     private static final String EMPTY_STRING = "";
+
+    private static final String ERROR_TIMESTAMP_PATTERN = "yyyyMMdd.HHmmss.SSS";
 
     //---------------------------------------------------------------------------------------------
     // STATIC FIELDS.
@@ -48,7 +56,7 @@ public class FxAssert {
 
     // ASSERTIONS: SUPER MATCHER.
 
-    @Unstable(reason = "is missing apidocs")
+    @Unstable(reason = "is missing apidocs; might be removed due to complications with generics")
     public static <T> void verifyThat(T value,
                                       Matcher<? super T> matcher) {
         verifyThatImpl(emptyReason(), value, matcher);
@@ -137,7 +145,8 @@ public class FxAssert {
             MatcherAssert.assertThat(reason, value, matcher);
         }
         catch (AssertionError error) {
-            // TODO: Save screenshot to file.
+            // TODO: make error capture and assertion throw more reliable.
+            // captureErrorScreenshot();
             throw new AssertionError(error.getMessage());
         }
     }
@@ -157,7 +166,7 @@ public class FxAssert {
     }
 
     private static <T extends Node> T toNode(NodeQuery nodeQuery) {
-        return nodeQuery.queryFirst();
+        return nodeQuery.query();
     }
 
     private static <T extends Node> Set<T> toNodeSet(NodeQuery nodeQuery) {
@@ -167,5 +176,27 @@ public class FxAssert {
     private static <T extends Node> Matcher<T> toNodeMatcher(Predicate<T> nodePredicate) {
         return GeneralMatchers.baseMatcher("applies on Predicate", nodePredicate);
     }
+
+    private static void captureErrorScreenshot() {
+        ZonedDateTime errorDateTime = ZonedDateTime.now();
+
+        Rectangle2D primaryScreenRegion = Screen.getPrimary().getBounds();
+        Image errorImage = assertContext().getCaptureSupport().captureRegion(primaryScreenRegion);
+
+        String errorTimestamp = formatErrorTimestamp(errorDateTime, ERROR_TIMESTAMP_PATTERN);
+        String errorImageFilename = "testfx-" + errorTimestamp + ".png";
+
+        assertContext().getCaptureSupport().saveImage(errorImage, Paths.get(errorImageFilename));
+    }
+
+    private static String formatErrorTimestamp(ZonedDateTime dateTime,
+                                               String dateTimePattern) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateTimePattern);
+        return dateTime.format(formatter);
+    }
+
+    // private static ZonedDateTime toZuluTime(ZonedDateTime dateTime) {
+    //      return dateTime.withZoneSameInstant(ZoneId.of(/* UTC */ "Z"));
+    // }
 
 }

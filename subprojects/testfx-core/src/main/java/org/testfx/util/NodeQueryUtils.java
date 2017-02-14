@@ -14,12 +14,18 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the Licence for the
  * specific language governing permissions and limitations under the Licence.
  */
-package org.testfx.service.query.impl;
+package org.testfx.util;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -30,9 +36,6 @@ import javafx.scene.control.TextInputControl;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -55,67 +58,113 @@ public final class NodeQueryUtils {
     // STATIC METHODS.
     //---------------------------------------------------------------------------------------------
 
+    /**
+     * Returns a set of the given windows' scenes' root nodes
+     */
     public static Set<Node> rootsOfWindows(Collection<Window> windows) {
         return rootOfWindow(Iterables.toArray(windows, Window.class));
     }
 
+    /**
+     * Returns a set of the given windows' scenes' root nodes
+     */
     public static Set<Node> rootOfWindow(Window... windows) {
         // TODO: is this set (toSet()) in order?
-        return FluentIterable.from(ImmutableList.copyOf(windows))
-            .<Node>transform((window) -> fromWindow(window))
-            .toSet();
+        return Arrays.stream(windows)
+                .map(NodeQueryUtils::fromWindow)
+                .collect(Collectors.toSet());
     }
 
+    /**
+     * Returns a set of the given stages' scenes' root nodes
+     */
     public static Set<Node> rootOfStage(Stage... stages) {
-        return FluentIterable.from(ImmutableList.copyOf(stages))
-            .<Node>transform((stage) -> fromStage(stage))
-            .toSet();
+        return Arrays.stream(stages)
+                .map(NodeQueryUtils::fromStage)
+                .collect(Collectors.toSet());
     }
 
+    /**
+     * Returns a set of the given scenes' root nodes
+     */
     public static Set<Node> rootOfScene(Scene... scenes) {
-        return FluentIterable.from(ImmutableList.copyOf(scenes))
-            .<Node>transform((scene) -> fromScene(scene))
-            .toSet();
+        return Arrays.stream(scenes)
+                .map(NodeQueryUtils::fromScene)
+                .collect(Collectors.toSet());
     }
 
+    /**
+     * Returns a set of the given popup controls' scenes' root nodes
+     */
     public static Set<Node> rootOfPopupControl(PopupControl... popupControls) {
-        return FluentIterable.from(ImmutableList.copyOf(popupControls))
-            .<Node>transform((popupControl) -> fromPopupControl(popupControl))
-            .toSet();
+        return Arrays.stream(popupControls)
+                .map(NodeQueryUtils::fromPopupControl)
+                .collect(Collectors.toSet());
     }
 
+    /**
+     * Returns a function that calls {@link Node#lookup(String)} on each given node
+     */
     public static Function<Node, Set<Node>> bySelector(String selector) {
         return (parentNode) -> lookupWithSelector(parentNode, selector);
     }
 
+    /**
+     * Returns a function that returns a {@code Set} of all {@code Node}s that pass the given {@code predicate}.
+     */
     public static Function<Node, Set<Node>> byPredicate(Predicate<Node> predicate) {
         return (parentNode) -> lookupWithPredicate(parentNode, predicate);
     }
 
+    /**
+     * Returns a function that returns a {@code Set} of all {@code Node}s that match the given {@code matcher}.
+     */
     public static Function<Node, Set<Node>> byMatcher(Matcher<Node> matcher) {
         return byPredicate(matchesMatcher(matcher));
     }
 
+    /**
+     * Returns a function that returns a {@code Set} of all {@link javafx.scene.control.Label}s,
+     * {@link TextInputControl}s, or any of their subclasses that have the given {@code text}.
+     */
     public static Function<Node, Set<Node>> byText(String text) {
         return byPredicate(hasText(text));
     }
 
+    /**
+     * Returns a predicate that returns true if the node's id equals the given {@code id}.
+     */
     public static Predicate<Node> hasId(String id) {
         return (node) -> hasNodeId(node, id);
     }
 
+    /**
+     * Returns a predicate that returns true if the node is a {@link javafx.scene.control.Label},
+     * {@link TextInputControl}, or any of their subclasses whose text equals the given {@code text}.
+     */
     public static Predicate<Node> hasText(String text) {
         return (node) -> hasNodeText(node, text);
     }
 
+    /**
+     * Returns a predicate that returns true if the given node matches the given {@code matcher}.
+     */
     public static Predicate<Node> matchesMatcher(Matcher<Node> matcher) {
         return (node) -> matchesNodeMatcher(node, matcher);
     }
 
+    /**
+     * Returns a predicate that returns true if the given node is visible, the given tree is visible, or the
+     * node's local bounds are within its scene's bounds
+     */
     public static Predicate<Node> isVisible() {
         return (node) -> isNodeVisible(node);
     }
 
+    /**
+     * Returns a function that returns a {@code Set} of all {@code Node}s that maps the given node by {@code function0}
+     * and then by {@code function1)}.
+     */
     public static Function<Node, Set<Node>> combine(Function<Node, Set<Node>> function0,
                                                     Function<Node, Set<Node>> function1) {
         return (input) -> combine(input, ImmutableList.of(function0, function1));
@@ -169,7 +218,7 @@ public final class NodeQueryUtils {
                                                     T input) {
         // TODO: Test cases with ClassCastException.
         try {
-            return predicate.apply(input);
+            return predicate.test(input);
         }
         catch (ClassCastException ignore) {
             return false;
@@ -177,12 +226,12 @@ public final class NodeQueryUtils {
     }
 
     private static boolean hasNodeId(Node node,
-                                     String id) {
+                                       String id) {
         return Objects.equals(node.getId(), id);
     }
 
     private static boolean hasNodeText(Node node,
-                                       String text) {
+                                         String text) {
         // TODO: Test cases with node.getText() == null.
         if (node instanceof Labeled) {
             return Objects.equals(((Labeled) node).getText(), text);
@@ -194,7 +243,7 @@ public final class NodeQueryUtils {
     }
 
     private static boolean matchesNodeMatcher(Node node,
-                                              Matcher matcher) {
+                                                Matcher matcher) {
         // TODO: Test cases with ClassCastException.
         return matcher.matches(node);
     }
@@ -218,9 +267,10 @@ public final class NodeQueryUtils {
 
     private static <T> Set<T> combine(T input,
                                       Collection<Function<T, Set<T>>> functions) {
-        return FluentIterable.from(functions)
-            .transformAndConcat((f) -> f.apply(input))
-            .toSet();
+        return functions.stream()
+                .map(f -> f.apply(input))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
 }

@@ -19,11 +19,11 @@ package org.testfx.service.finder.impl;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.stage.Window;
 
-import com.google.common.base.Predicate;
 import org.hamcrest.Matcher;
 import org.testfx.api.annotation.Unstable;
 import org.testfx.service.finder.NodeFinder;
@@ -31,7 +31,7 @@ import org.testfx.service.finder.WindowFinder;
 import org.testfx.service.query.NodeQuery;
 import org.testfx.service.query.NodeQueryFactory;
 import org.testfx.service.query.impl.NodeQueryFactoryImpl;
-import org.testfx.service.query.impl.NodeQueryUtils;
+import org.testfx.util.NodeQueryUtils;
 
 @Unstable
 public class NodeFinderImpl implements NodeFinder {
@@ -112,7 +112,7 @@ public class NodeFinderImpl implements NodeFinder {
     //---------------------------------------------------------------------------------------------
 
     private Set<Node> rootsOfWindows() {
-        List<Window> windows = windowFinder.listOrderedWindows();
+        List<Window> windows = windowFinder.listTargetWindows();
         return NodeQueryUtils.rootsOfWindows(windows);
     }
 

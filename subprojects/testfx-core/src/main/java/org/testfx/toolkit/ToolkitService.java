@@ -25,32 +25,71 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/**
+ * Interface that sets up an {@link Application}, {@link Stage}, {@link Scene}, or {@link Parent rootNode} on the
+ * {@code JavaFX Application Thread} as well as cleaning up the application.
+ */
 public interface ToolkitService {
 
+    /**
+     * If the given {@link PrimaryStageFuture#isDone()}, returns that future; otherwise, launches the given application
+     * with its arguments.
+     */
     Future<Stage> setupPrimaryStage(PrimaryStageFuture primaryStageFuture,
                                     Class<? extends Application> applicationClass,
                                     String... applicationArgs);
 
+    /**
+     * Runs the given runnable on the {@code JavaFX Application Thread}.
+     */
     Future<Void> setupFixture(Runnable runnable);
 
+    /**
+     * Runs the given callable on the {@code JavaFX Application Thread}.
+     */
     <T> Future<T> setupFixture(Callable<T> callable);
 
+    /**
+     * Calls the stageConsumer with the given stage on the {@code JavaFX Application Thread} and returns a
+     * {@link Future} whose {@link Future#get()} returns that stage.
+     */
     Future<Stage> setupStage(Stage stage,
                              Consumer<Stage> stageConsumer);
 
+    /**
+     * Sets the given scene as the given stage's scene on the {@code JavaFX Application Thread} and returns a
+     * {@link Future} whose {@link Future#get()} returns the given scene.
+     */
     Future<Scene> setupScene(Stage stage,
                              Supplier<? extends Scene> sceneSupplier);
 
+    /**
+     * Wraps the parent in a scene, sets that scene as the given stage's scene on the
+     * {@code JavaFX Application Thread}, and returns a {@link Future} whose {@link Future#get()} returns
+     * the given parent.
+     */
     Future<Parent> setupSceneRoot(Stage stage,
                                   Supplier<? extends Parent> sceneRootSupplier);
 
+    /**
+     * Creates, initializes, and starts the given applicationClass and returns a {@link Future} whose
+     * {@link Future#get()} returns the created application.
+     */
     Future<Application> setupApplication(Supplier<Stage> stageSupplier,
                                          Class<? extends Application> applicationClass,
                                          String... applicationArgs);
 
-    Future<ApplicationFixture> setupApplication(Supplier<Stage> stageSupplier,
-                                                ApplicationFixture applicationFixture);
+    /**
+     * Creates, initializes, and starts the supplied application and returns a {@link Future} whose
+     * {@link Future#get()} returns the created application.
+     */
+    Future<Application> setupApplication(Supplier<Stage> stageSupplier,
+                                         Supplier<Application> applicationSupplier,
+                                         String... applicationArgs);
 
-    Future<Void> cleanupApplication(ApplicationFixture applicationFixture);
+    /**
+     * Calls {@link ApplicationService#stop(Application)} on the given application.
+     */
+    Future<Void> cleanupApplication(Application application);
 
 }

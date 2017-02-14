@@ -20,6 +20,8 @@ import javafx.application.Application;
 import javafx.application.Application.Parameters;
 import javafx.application.HostServices;
 import javafx.application.Preloader.PreloaderNotification;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.stage.Stage;
 
 import org.junit.After;
@@ -27,7 +29,6 @@ import org.junit.Before;
 import org.testfx.api.FxRobot;
 import org.testfx.api.FxToolkit;
 import org.testfx.api.annotation.Unstable;
-import org.testfx.toolkit.ApplicationFixture;
 
 @Unstable(reason = "might be renamed to ApplicationTestBase")
 public abstract class ApplicationTest extends FxRobot implements ApplicationFixture {
@@ -52,20 +53,24 @@ public abstract class ApplicationTest extends FxRobot implements ApplicationFixt
     public final void internalBefore()
                               throws Exception {
         FxToolkit.registerPrimaryStage();
-        FxToolkit.setupApplication(this);
+        FxToolkit.setupApplication(() -> new ApplicationAdapter(this));
     }
 
     @After
     @Unstable(reason = "is missing apidocs")
     public final void internalAfter()
                              throws Exception {
-        FxToolkit.cleanupApplication(this);
+        // release all keys
+        release(new KeyCode[0]);
+        // release all mouse buttons
+        release(new MouseButton[0]);
+        FxToolkit.cleanupApplication(new ApplicationAdapter(this));
     }
 
     @Override
     @Unstable(reason = "is missing apidocs")
     public void init()
-              throws Exception {}
+            throws Exception {}
 
     @Override
     @Unstable(reason = "is missing apidocs")

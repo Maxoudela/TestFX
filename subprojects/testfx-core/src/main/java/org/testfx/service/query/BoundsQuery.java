@@ -14,16 +14,16 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the Licence for the
  * specific language governing permissions and limitations under the Licence.
  */
-package org.testfx.toolkit;
+package org.testfx.service.query;
 
-import javafx.stage.Stage;
+import javafx.geometry.Bounds;
 
-public interface ApplicationFixture {
+/**
+ * Essentially, a {@link java.util.function.Supplier} that returns a {@link Bounds} object via {@link #query()}.
+ */
+@FunctionalInterface
+public interface BoundsQuery {
 
-    void init() throws Exception;
-
-    void start(Stage stage) throws Exception;
-
-    void stop() throws Exception;
+    public Bounds query();
 
 }

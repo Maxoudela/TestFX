@@ -16,70 +16,51 @@
  */
 package org.testfx.service.support;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
-import javafx.embed.swing.SwingFXUtils;
+import java.nio.file.Path;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
-import javafx.stage.Screen;
+import javafx.scene.shape.Shape;
 
-import org.testfx.api.annotation.Unstable;
-import org.testfx.robot.BaseRobot;
-
-@Unstable(reason = "needs more tests")
-public class CaptureSupport {
-
-    //---------------------------------------------------------------------------------------------
-    // PRIVATE FIELDS.
-    //---------------------------------------------------------------------------------------------
-
-    private BaseRobot baseRobot;
-
-    //---------------------------------------------------------------------------------------------
-    // CONSTRUCTORS.
-    //---------------------------------------------------------------------------------------------
-
-    public CaptureSupport(BaseRobot baseRobot) {
-        this.baseRobot = baseRobot;
-    }
+public interface CaptureSupport {
 
     //---------------------------------------------------------------------------------------------
     // METHODS.
     //---------------------------------------------------------------------------------------------
 
-    public void captureScreenToFile(Screen screen, File captureFile) {
-        Image captureImage = captureScreenToImage(screen);
-        writeCaptureImageToFile(captureImage, captureFile);
-    }
+    /**
+     * Returns a snapshot of the node
+     */
+    Image captureNode(Node node);
 
-    public void capturePrimaryScreenToFile(File captureFile) {
-        captureScreenToFile(Screen.getPrimary(), captureFile);
-    }
+    /**
+     * Returns a screenshot of the given region
+     */
+    Image captureRegion(Rectangle2D region);
 
-    //---------------------------------------------------------------------------------------------
-    // PRIVATE METHODS.
-    //---------------------------------------------------------------------------------------------
+    /**
+     * Loads the image file from the given path
+     */
+    Image loadImage(Path path);
 
-    private Image captureScreenToImage(Screen screen) {
-        Rectangle2D region = screen.getBounds();
-        return baseRobot.captureRegion(region);
-    }
+    /**
+     * Saves the given image to the given path
+     */
+    void saveImage(Image image,
+                   Path path);
 
-    private Image captureNodeToImage(Node node) {
-        return node.snapshot(null, null);
-    }
+    /**
+     * NOT YET IMPLEMENTED
+     */
+    Image annotateImage(Shape shape,
+                        Image image);
 
-    private void writeCaptureImageToFile(Image captureImage, File captureFile) {
-        BufferedImage bufferedImage = SwingFXUtils.fromFXImage(captureImage, null);
-        try {
-            ImageIO.write(bufferedImage, "png", captureFile);
-        }
-        catch (IOException exception) {
-            exception.printStackTrace();
-        }
-    }
+    /**
+     * Compares two images and returns a {@link PixelMatcherResult} that defines
+     * the how similar/dissimilar one was from the other.
+     */
+    PixelMatcherResult matchImages(Image image0,
+                                   Image image1,
+                                   PixelMatcher pixelMatcher);
 
 }

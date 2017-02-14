@@ -21,6 +21,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBuilder;
 import javafx.scene.control.TextFieldBuilder;
 import javafx.scene.layout.VBoxBuilder;
+
 import org.junit.Test;
 
 import static org.loadui.testfx.Assertions.verifyThat;
@@ -28,35 +29,36 @@ import static org.loadui.testfx.Assertions.verifyThat;
 // verifyThat supports lambda expressions, but to keep Java 7 compatibility, we don't use them here.
 public class AssertionsTest extends GuiTest {
 
-  @Test
-  public void shouldSupportPredicatesForQueries() {
-    verifyThat("Button A", Button::isDefaultButton);
-  }
-
-  @Test
-  public void shouldSupportPredicatesForQueries2() {
-    try {
-      verifyThat("Button A", Button::isCancelButton);
-    } catch (AssertionError e) {
-      return;
+    @Test
+    public void shouldSupportPredicatesForQueries() {
+        verifyThat("Button A", Button::isDefaultButton);
     }
-    throw new AssertionError("verifyThat should have failed.");
-  }
 
-  @Test
-  public void shouldSupportPredicatesForNodes() {
-    Button b = find("Button A");
+    @Test
+    public void shouldSupportPredicatesForQueries2() {
+        try {
+            verifyThat("Button A", Button::isCancelButton);
+        }
+        catch (AssertionError e) {
+            return;
+        }
+        throw new AssertionError("verifyThat should have failed.");
+    }
 
-    verifyThat(b, Button::isDefaultButton);
-  }
+    @Test
+    public void shouldSupportPredicatesForNodes() {
+        Button b = find("Button A");
 
-  @Override
-  protected Parent getRootNode() {
-    return VBoxBuilder
-        .create()
-        .children(ButtonBuilder.create().id("button1").text("Button A").defaultButton(true).build(),
-            ButtonBuilder.create().id("button2").text("Button B").build(),
-            TextFieldBuilder.create().id("text").build()).build();
-  }
+        verifyThat(b, Button::isDefaultButton);
+    }
+
+    @Override
+    protected Parent getRootNode() {
+        return VBoxBuilder
+                .create()
+                .children(ButtonBuilder.create().id("button1").text("Button A").defaultButton(true).build(),
+                        ButtonBuilder.create().id("button2").text("Button B").build(),
+                        TextFieldBuilder.create().id("text").build()).build();
+    }
 
 }

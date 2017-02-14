@@ -18,8 +18,11 @@ package org.testfx.api;
 
 import org.testfx.api.annotation.Unstable;
 
+/**
+ * Wrapper class that holds a static {@link FxServiceContext} via {@link #serviceContext()} that is lazily created.
+ */
 @Unstable(reason = "class was recently added")
-public class FxService {
+public final class FxService {
 
     //---------------------------------------------------------------------------------------------
     // STATIC FIELDS.

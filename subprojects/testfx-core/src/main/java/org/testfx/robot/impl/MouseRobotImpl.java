@@ -16,13 +16,14 @@
  */
 package org.testfx.robot.impl;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javafx.geometry.Point2D;
 import javafx.scene.input.MouseButton;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.testfx.api.annotation.Unstable;
 import org.testfx.robot.BaseRobot;
 import org.testfx.robot.MouseRobot;
@@ -40,7 +41,10 @@ public class MouseRobotImpl implements MouseRobot {
     // PRIVATE FIELDS.
     //---------------------------------------------------------------------------------------------
 
-    private final Set<MouseButton> pressedButtons = Sets.newHashSet();
+    private final Set<MouseButton> pressedButtons = new HashSet<>();
+    public final Set<MouseButton> getPressedButtons() {
+        return Collections.unmodifiableSet(pressedButtons);
+    }
 
     //---------------------------------------------------------------------------------------------
     // CONSTRUCTORS.
@@ -125,11 +129,11 @@ public class MouseRobotImpl implements MouseRobot {
     }
 
     private void pressButtons(List<MouseButton> buttons) {
-      buttons.forEach(this::pressButton);
+        buttons.forEach(this::pressButton);
     }
 
     private void releaseButtons(List<MouseButton> buttons) {
-      buttons.forEach(this::releaseButton);
+        buttons.forEach(this::releaseButton);
     }
 
     private void pressButton(MouseButton button) {

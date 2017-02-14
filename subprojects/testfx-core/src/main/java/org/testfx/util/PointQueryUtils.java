@@ -25,13 +25,13 @@ import javafx.geometry.VPos;
 import org.testfx.api.annotation.Unstable;
 
 @Unstable
-public final class BoundsUtils {
+public final class PointQueryUtils {
 
     //---------------------------------------------------------------------------------------------
     // CONSTRUCTORS.
     //---------------------------------------------------------------------------------------------
 
-    private BoundsUtils() {
+    private PointQueryUtils() {
         throw new UnsupportedOperationException();
     }
 
@@ -39,16 +39,40 @@ public final class BoundsUtils {
     // STATIC METHODS.
     //---------------------------------------------------------------------------------------------
 
-    public static Point2D atPosition(Bounds bounds, Pos position) {
+    /**
+     *
+     * @param bounds the given bounds
+     * @param position the position within the bounds
+     * @return a point somewhere in the given bounds whose x and y values are determined by
+     * {@code computePosition(position)}.
+     */
+    public static Point2D atPosition(Bounds bounds,
+                                     Pos position) {
         return atPositionFactors(bounds, computePositionFactors(position));
     }
 
-    public static Point2D atPositionFactors(Bounds bounds, Point2D positionFactors) {
-        double pointX = lerp(bounds.getMinX(), bounds.getMaxX(), positionFactors.getX());
-        double pointY = lerp(bounds.getMinY(), bounds.getMaxY(), positionFactors.getY());
+    /**
+     *
+     * @param bounds the given bounds
+     * @param positionFactors a {@code Point2D} object whose x and y values represent percentage values
+     *                        (0.0 = 0% and 1.0 = 100%). As an example, an x value of 0 will return
+     *                        {@link Bounds#getMinX()}, 1.0 will return {@link Bounds#getMaxX()}, and 0.5 will return
+     *                        {@code bounds.getMinX() + (bounds.getWidth() * positionFactors.getX()}.
+     * @return a point somewhere in the given bounds whose x and y values are determined by {@code positionFactors}.
+     */
+    public static Point2D atPositionFactors(Bounds bounds,
+                                            Point2D positionFactors) {
+        double pointX = lerp(bounds.getMinX(), bounds.getWidth(), positionFactors.getX());
+        double pointY = lerp(bounds.getMinY(), bounds.getHeight(), positionFactors.getY());
         return new Point2D(pointX, pointY);
     }
 
+    /**
+     *
+     * @param position the position
+     * @return a {@code Point2D} that can be used as a {@code positionFactor} object in
+     * {@link #atPositionFactors(Bounds, Point2D)}.
+     */
     public static Point2D computePositionFactors(Pos position) {
         double positionX = computePositionX(position.getHpos());
         double positionY = computePositionY(position.getVpos());
@@ -59,8 +83,10 @@ public final class BoundsUtils {
     // PRIVATE STATIC METHODS.
     //---------------------------------------------------------------------------------------------
 
-    private static double lerp(double start, double end, double factor) {
-        return start + ((end - start) * factor);
+    private static double lerp(double start,
+                               double distance,
+                               double factor) {
+        return start + (distance * factor);
     }
 
     private static double computePositionX(HPos hPos) {

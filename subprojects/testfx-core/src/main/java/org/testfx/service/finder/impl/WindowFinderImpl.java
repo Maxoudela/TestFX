@@ -16,26 +16,28 @@
  */
 package org.testfx.service.finder.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.stage.PopupWindow;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
-import org.testfx.api.annotation.Unstable;
+
 import org.testfx.service.finder.WindowFinder;
 
-@Unstable
 public class WindowFinderImpl implements WindowFinder {
 
     //---------------------------------------------------------------------------------------------
-    // FIELDS.
+    // PRIVATE FIELDS.
     //---------------------------------------------------------------------------------------------
 
     private Window lastTargetWindow;
@@ -45,54 +47,79 @@ public class WindowFinderImpl implements WindowFinder {
     //---------------------------------------------------------------------------------------------
 
     @Override
-    public Window target() {
+    public Window targetWindow() {
         return lastTargetWindow;
     }
 
     @Override
-    public void target(Window window) {
+    public void targetWindow(Window window) {
         lastTargetWindow = window;
     }
 
     @Override
-    public void target(int windowIndex) {
-        target(window(windowIndex));
+    public void targetWindow(Predicate<Window> predicate) {
+        targetWindow(window(predicate));
     }
 
     @Override
-    public void target(String stageTitleRegex) {
-        target(window(stageTitleRegex));
-    }
-
-    @Override
-    public void target(Scene scene) {
-        target(window(scene));
-    }
-
-    @Override
-    @SuppressWarnings("deprecation")
     public List<Window> listWindows() {
-        List<Window> windows = Lists.newArrayList(Window.impl_getWindows());
-        return ImmutableList.copyOf(Lists.reverse(windows));
+        return fetchWindowsInQueue();
     }
 
     @Override
-    public List<Window> listOrderedWindows() {
-        List<Window> windows = listWindows();
-        List<Window> orderedWindows = orderWindowsByProximityTo(lastTargetWindow, windows);
-        return orderedWindows;
+    public List<Window> listTargetWindows() {
+        return fetchWindowsByProximityTo(lastTargetWindow);
+    }
+
+    @Override
+    public Window window(Predicate<Window> predicate) {
+        return fetchWindowsByProximityTo(lastTargetWindow).stream()
+            .filter(predicate)
+            .findFirst()
+            .orElseThrow(NoSuchElementException::new);
+    }
+
+    // Convenience methods:
+
+    @Override
+    public void targetWindow(int windowIndex) {
+        targetWindow(window(windowIndex));
+    }
+
+    @Override
+    public void targetWindow(String stageTitleRegex) {
+        targetWindow(window(stageTitleRegex));
+    }
+
+    @Override
+    public void targetWindow(Pattern stageTitlePattern) {
+        targetWindow(window(stageTitlePattern));
+    }
+
+    @Override
+    public void targetWindow(Scene scene) {
+        targetWindow(window(scene));
+    }
+
+    @Override
+    public void targetWindow(Node node) {
+        targetWindow(window(node));
     }
 
     @Override
     public Window window(int windowIndex) {
-        List<Window> windows = listWindows();
+        List<Window> windows = fetchWindowsByProximityTo(lastTargetWindow);
         return windows.get(windowIndex);
     }
 
     @Override
     public Window window(String stageTitleRegex) {
-        List<Window> windows = listWindows();
-        return Iterables.find(windows, hasStageTitlePredicate(stageTitleRegex));
+        return window(hasStageTitlePredicate(stageTitleRegex));
+    }
+
+    @Override
+    public Window window(Pattern stageTitlePattern) {
+        return window(hasStageTitlePredicate(stageTitlePattern.toString()));
     }
 
     @Override
@@ -100,21 +127,35 @@ public class WindowFinderImpl implements WindowFinder {
         return scene.getWindow();
     }
 
+    @Override
+    public Window window(Node node) {
+        return window(node.getScene());
+    }
+
     //---------------------------------------------------------------------------------------------
     // PRIVATE METHODS.
     //---------------------------------------------------------------------------------------------
 
-    private List<Window> orderWindowsByProximityTo(Window targetWindow, List<Window> windows) {
-        return Ordering.natural()
-            .onResultOf(calculateWindowProximityFunction(targetWindow))
-            .immutableSortedCopy(windows);
+    @SuppressWarnings("deprecation")
+    private List<Window> fetchWindowsInQueue() {
+        List<Window> windows = Lists.newArrayList(Window.impl_getWindows());
+        return ImmutableList.copyOf(Lists.reverse(windows));
     }
 
-    private Function<Window, Integer> calculateWindowProximityFunction(final Window targetWindow) {
-        return window -> calculateWindowProximityTo(targetWindow, window);
+    private List<Window> fetchWindowsByProximityTo(Window targetWindow) {
+        List<Window> windows = fetchWindowsInQueue();
+        return orderWindowsByProximityTo(targetWindow, windows);
     }
 
-    private int calculateWindowProximityTo(Window targetWindow, Window window) {
+    private List<Window> orderWindowsByProximityTo(Window targetWindow,
+                                                   List<Window> windows) {
+        List<Window> copy = new ArrayList<>(windows);
+        copy.sort(Comparator.comparingInt(w -> calculateWindowProximityTo(targetWindow, w)));
+        return Collections.unmodifiableList(copy);
+    }
+
+    private int calculateWindowProximityTo(Window targetWindow,
+                                           Window window) {
         if (window == targetWindow) {
             return 0;
         }
@@ -124,7 +165,8 @@ public class WindowFinderImpl implements WindowFinder {
         return 2;
     }
 
-    private boolean isOwnerOf(Window window, Window targetWindow) {
+    private boolean isOwnerOf(Window window,
+                              Window targetWindow) {
         Window ownerWindow = retrieveOwnerOf(window);
         if (ownerWindow == targetWindow) {
             return true;
@@ -142,12 +184,13 @@ public class WindowFinderImpl implements WindowFinder {
         return null;
     }
 
-    private Predicate<Window> hasStageTitlePredicate(final String stageTitleRegex) {
+    private Predicate<Window> hasStageTitlePredicate(String stageTitleRegex) {
         return window -> window instanceof Stage &&
             hasStageTitle((Stage) window, stageTitleRegex);
     }
 
-    private boolean hasStageTitle(Stage stage, String stageTitleRegex) {
+    private boolean hasStageTitle(Stage stage,
+                                  String stageTitleRegex) {
         return stage.getTitle() != null && stage.getTitle().matches(stageTitleRegex);
     }
 

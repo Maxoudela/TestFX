@@ -16,6 +16,7 @@
  */
 package org.testfx.service.query.impl;
 
+import java.util.Optional;
 import java.util.Set;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -26,7 +27,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
 
-import com.google.common.base.Optional;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,10 +38,10 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.testfx.service.query.impl.NodeQueryUtils.bySelector;
-import static org.testfx.service.query.impl.NodeQueryUtils.combine;
-import static org.testfx.service.query.impl.NodeQueryUtils.hasId;
-import static org.testfx.service.query.impl.NodeQueryUtils.rootOfScene;
+import static org.testfx.util.NodeQueryUtils.bySelector;
+import static org.testfx.util.NodeQueryUtils.combine;
+import static org.testfx.util.NodeQueryUtils.hasId;
+import static org.testfx.util.NodeQueryUtils.rootOfScene;
 
 public class NodeQueryImplTest {
 
@@ -104,7 +104,7 @@ public class NodeQueryImplTest {
         // when:
         Node result = nodeQuery
             .from(label0, label1, label2)
-            .queryFirst();
+            .query();
 
         // then:
         assertThat(result, is(label0));
@@ -114,7 +114,7 @@ public class NodeQueryImplTest {
     public void queryFirst_is_null() {
         // when:
         Node result = nodeQuery
-            .queryFirst();
+            .query();
 
         // then:
         assertThat(result, is(nullValue()));
@@ -125,7 +125,7 @@ public class NodeQueryImplTest {
         // when:
         Optional<Node> result = nodeQuery
             .from(label0, label1, label2)
-            .tryQueryFirst();
+            .tryQuery();
 
         // then:
         assertThat(result, is(Optional.of(label0)));
@@ -135,10 +135,10 @@ public class NodeQueryImplTest {
     public void tryQueryFirst_is_absent() {
         // when:
         Optional<Node> result = nodeQuery
-            .tryQueryFirst();
+            .tryQuery();
 
         // then:
-        assertThat(result, is(Optional.absent()));
+        assertThat(result, is(Optional.empty()));
     }
 
     @Test
@@ -260,7 +260,7 @@ public class NodeQueryImplTest {
         Set<Node> result = nodeQuery
             .from(labels)
             .lookup(bySelector(".label"))
-            .selectAt(1)
+            .nth(1)
             .queryAll();
 
         // then:
@@ -273,9 +273,9 @@ public class NodeQueryImplTest {
         Set<Node> result = nodeQuery
             .from(rootOfScene(scene))
             .lookup(bySelector("#labels"))
-            .selectAt(0)
+            .nth(0)
             .lookup(bySelector(".label"))
-            .selectAt(2)
+            .nth(2)
             .queryAll();
 
         // then:
@@ -288,7 +288,7 @@ public class NodeQueryImplTest {
         Set<Node> result = nodeQuery
             .from(labels)
             .lookup(bySelector(".label"))
-            .selectAt(99)
+            .nth(99)
             .queryAll();
 
         // then:
@@ -301,9 +301,9 @@ public class NodeQueryImplTest {
         Set<Node> result = nodeQuery
             .from(rootOfScene(scene))
             .lookup(bySelector("#labels"))
-            .selectAt(0)
+            .nth(0)
             .lookup(bySelector(".label"))
-            .selectAt(99)
+            .nth(99)
             .queryAll();
 
         // then:
@@ -316,7 +316,7 @@ public class NodeQueryImplTest {
         Set<Node> result = nodeQuery
             .from(rootOfScene(scene))
             .lookup(bySelector(".button"))
-            .select(hasId("button1"))
+            .match(hasId("button1"))
             .queryAll();
 
         // then:
